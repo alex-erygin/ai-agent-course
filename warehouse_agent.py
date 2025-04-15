@@ -116,7 +116,7 @@ def run_conversation(messages):
     """Runs the conversation with the OpenAI model, handling function calls."""
     try:
         response = client.chat.completions.create(
-            model="gpt-3.5-turbo-0125", # Or your preferred model
+            model="gpt-4o-mini", # Or your preferred model
             messages=messages,
             tools=tools,
             tool_choice="auto", # auto is default, but we'll be explicit
