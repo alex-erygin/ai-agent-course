@@ -16,16 +16,22 @@ client = openai.OpenAI()
 # In-memory storage for the warehouse inventory
 inventory = {}
 
+# ANSI escape codes for colors
+GREEN = '\033[92m'
+YELLOW = '\033[93m'
+GRAY = '\033[90m' # For function calls (looks silver/gray)
+RESET = '\033[0m'
+
 def add_item(item_name: str, quantity: int):
     """Adds an item to the warehouse inventory."""
-    print(f"[Вызов функции] Добавление {quantity} шт. товара '{item_name}'")
+    print(f"{GRAY}[Вызов функции] Добавление {quantity} шт. товара '{item_name}'{RESET}")
     # Simple inventory update logic
     inventory[item_name] = inventory.get(item_name, 0) + quantity
     return json.dumps({"status": "success", "message": f"Добавлено {quantity} шт. товара '{item_name}'."}, ensure_ascii=False) # ensure_ascii=False for Russian characters
 
 def remove_item(item_name: str, quantity: int):
     """Removes an item from the warehouse inventory."""
-    print(f"[Вызов функции] Удаление {quantity} шт. товара '{item_name}'")
+    print(f"{GRAY}[Вызов функции] Удаление {quantity} шт. товара '{item_name}'{RESET}")
     # Simple inventory update logic with error handling
     if item_name not in inventory:
         return json.dumps({"status": "error", "message": f"Товар '{item_name}' не найден."}, ensure_ascii=False)
@@ -39,7 +45,7 @@ def remove_item(item_name: str, quantity: int):
 
 def get_inventory():
     """Gets the current warehouse inventory report."""
-    print("[Вызов функции] Получение отчета по складу")
+    print(f"{GRAY}[Вызов функции] Получение отчета по складу{RESET}")
     # Simple inventory reporting logic
     if not inventory:
         return json.dumps({"status": "success", "inventory": "Склад пуст."}, ensure_ascii=False)
@@ -201,7 +207,7 @@ def run_conversation(messages):
 if __name__ == "__main__":
     print("Агент Склада инициализирован.")
     print("Примеры команд: 'Добавь 5 яблок', 'Убери 2 банана', 'Покажи склад', 'Сколько яблок на складе?'")
-    print("Введите 'выход' для завершения.")
+    print("Введите 'выход' или 'exit' для завершения.")
     # Initial system message to guide the assistant in Russian
     messages = [{"role": "system", "content": (
         "Ты — полезный ассистент для управления складом. Ты говоришь по-русски. "
@@ -213,13 +219,24 @@ if __name__ == "__main__":
         "Если вызов функции возвращает статус ошибки, сообщи пользователю об ошибке."
         )}]
     while True:
-        user_input = input("Вы: ")
-        if user_input.lower() == 'выход': # Changed quit command to Russian
+        # Use yellow for user input prompt
+        user_input = input(f"{YELLOW}Вы: {RESET}")
+        # Use 'выход' or 'exit' to quit, case-insensitive
+        if user_input.lower() in ['выход', 'exit']:
             break
         messages.append({"role": "user", "content": user_input})
+        # Remove the last assistant message if it exists to avoid duplication before calling run_conversation
+        if len(messages) > 1 and messages[-1]["role"] == "assistant":
+             messages.pop()
+
         assistant_response = run_conversation(messages)
-        print(f"Ассистент: {assistant_response}")
-        # Add assistant's response to messages history *only if* it's not None or empty
+        # Print assistant response only if it's not None or empty, and in green
         if assistant_response:
-             messages.append({"role": "assistant", "content": assistant_response})
-        # ... optional history limit ... 
+            print(f"{GREEN}Ассистент: {assistant_response}{RESET}")
+            # Add assistant's response to history *after* processing and printing
+            messages.append({"role": "assistant", "content": assistant_response})
+
+        # Optional: Limit message history size
+        MAX_HISTORY = 10
+        if len(messages) > MAX_HISTORY:
+            messages = messages[0:1] + messages[-MAX_HISTORY+1:] 
